@@ -1,0 +1,21 @@
+﻿name: ci-ping
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print context
+        run: |
+          echo "branch=$GITHUB_REF_NAME"
+          echo "sha=$GITHUB_SHA"
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: List files
+        run: |
+          ls -la
+          ls -la .github/workflows

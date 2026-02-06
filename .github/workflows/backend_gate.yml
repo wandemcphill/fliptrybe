@@ -5,6 +5,7 @@ on:
     branches: ["main"]
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   backend:
@@ -14,6 +15,11 @@ jobs:
         shell: bash
 
     steps:
+      - name: CI Ping
+        run: |
+          echo "branch=$GITHUB_REF_NAME"
+          echo "sha=$GITHUB_SHA"
+
       - name: Checkout
         uses: actions/checkout@v4
 
