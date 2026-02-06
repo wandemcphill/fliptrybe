@@ -1,0 +1,6 @@
+<key>NSCameraUsageDescription</key>
+<string>FlipTrybe needs camera access to upload product photos.</string>
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>FlipTrybe needs your location to find nearby drivers.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>FlipTrybe needs gallery access to upload listings.</string>

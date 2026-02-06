@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FlipTrybe</title>
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; background: #000; }
+      #introWrap { height: 100%; width: 100%; display: grid; place-items: center; }
+      video, img { width: 100%; height: 100%; object-fit: cover; }
+    </style>
+  </head>
+  <body>
+    <div id="introWrap">
+      <video id="introVideo" autoplay muted playsinline preload="auto">
+        <source src="{{ url_for('static', filename='intro.mp4') }}" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+
+      <img
+        id="fallbackImage"
+        src="{{ url_for('static', filename='landing.jpg') }}"
+        alt="Landing"
+        style="display:none;"
+      />
+    </div>
+
+    <script>
+      (function () {
+        const video = document.getElementById("introVideo");
+        const img = document.getElementById("fallbackImage");
+
+        // sessionStorage resets when the app/tab is closed and reopened.
+        if (sessionStorage.getItem("introDone") === "1") {
+          video.style.display = "none";
+          img.style.display = "block";
+          return;
+        }
+
+        let plays = 0;
+
+        function showImage() {
+          sessionStorage.setItem("introDone", "1");
+          try { video.pause(); } catch (e) {}
+          video.style.display = "none";
+          img.style.display = "block";
+        }
+
+        const p = video.play();
+        if (p && typeof p.catch === "function") {
+          p.catch(() => showImage());
+        }
+
+        video.addEventListener("ended", () => {
+          plays += 1;
+          if (plays < 2) {
+            video.currentTime = 0;
+            const p2 = video.play();
+            if (p2 && typeof p2.catch === "function") {
+              p2.catch(() => showImage());
+            }
+          } else {
+            showImage();
+          }
+        });
+
+        video.addEventListener("error", () => showImage());
+      })();
+    </script>
+  </body>
+</html>

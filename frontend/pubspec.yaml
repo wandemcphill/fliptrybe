@@ -1,0 +1,63 @@
+name: fliptrybe
+description: The Super App for Nigeria (Commerce, Logistics, Short-lets).
+publish_to: 'none' # Prevent accidental publishing to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  url_launcher: ^6.3.0
+
+  # 1. NETWORKING & API
+  socket_io_client: ^2.0.3        # For Real-time Chat & Driver Tracking
+  dio: ^5.4.3+1                # Powerful networking with interceptors
+  video_player: ^2.8.2         # For landing intro video
+  
+  # 2. LOCAL STORAGE
+  shared_preferences: ^2.2.2      # To save the JWT Token (Keep user logged in)
+  flutter_secure_storage: ^9.0.0  # (Optional) For ultra-secure banking data
+
+  # 3. MEDIA & CAMERA
+  image_picker: ^1.0.7            # To take photos of items to sell
+  
+  # 4. MAPS & LOCATION (The "Uber" Engine)
+  google_maps_flutter: ^2.5.3     # The Map Interface
+  geolocator: ^11.0.0             # To get current GPS coordinates
+  
+  # 5. PAYMENTS
+         # Direct connection to Nigerian banks
+
+  # 6. UI BEAUTIFICATION
+  google_fonts: ^4.0.4
+            # For the "Inter" or "Poppins" font
+  intl: ^0.17.0
+                   # For formatting Currency (₦) and Dates
+  shimmer: ^3.0.0                 # For the "Loading..." skeleton effect
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+# ==========================================
+# ASSETS & FONTS CONFIGURATION
+# ==========================================
+flutter:
+  uses-material-design: true
+
+  # Enable local assets (Create this folder in your project root!)
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/videos/
+
+  # (Optional) If you download custom fonts instead of using GoogleFonts package
+  # fonts:
+  #   - family: Inter
+  #     fonts:
+  #       - asset: assets/fonts/Inter-Regular.ttf
+  #       - asset: assets/fonts/Inter-Bold.ttf

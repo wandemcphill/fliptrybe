@@ -1,0 +1,51 @@
+name: Smoke Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install backend deps
+        shell: powershell
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start backend
+        shell: powershell
+        run: |
+          $env:FLIPTRYBE_ENV = "dev"
+          Start-Process -FilePath python -ArgumentList "main.py" -WorkingDirectory "backend" -WindowStyle Hidden
+          Start-Sleep -Seconds 3
+
+      - name: Wait for health
+        shell: powershell
+        run: |
+          $env:FLIPTRYBE_ENV = "dev"
+          $ok = $false
+          for ($i = 0; $i -lt 30; $i++) {
+            try {
+              $res = Invoke-RestMethod "http://127.0.0.1:5000/api/health"
+              if ($res.ok -eq $true) { $ok = $true; break }
+            } catch { }
+            Start-Sleep -Seconds 2
+          }
+          if (-not $ok) { throw "Health check failed" }
+
+      - name: Run smoke test
+        shell: powershell
+        run: |
+          $env:FLIPTRYBE_ENV = "dev"
+          powershell -ExecutionPolicy Bypass -File tools/smoke_test.ps1

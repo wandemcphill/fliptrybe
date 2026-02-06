@@ -1,0 +1,56 @@
+name: Backend Ops Smoke
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  ops-smoke:
+    runs-on: windows-latest
+
+    env:
+      BACKEND_DIR: backend
+      FLASK_APP: main.py
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          Set-Location "${{ env.BACKEND_DIR }}"
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run migrations
+        shell: pwsh
+        run: |
+          Set-Location "${{ env.BACKEND_DIR }}"
+          $env:FLASK_APP="${{ env.FLASK_APP }}"
+          python -m flask db upgrade
+
+      - name: Run ops smoke runner (twice)
+        shell: pwsh
+        run: |
+          Set-Location "${{ env.BACKEND_DIR }}"
+          $env:FLASK_APP="${{ env.FLASK_APP }}"
+          .\ops\ops_run.ps1
+          .\ops\ops_run.ps1
+
+      - name: Upload ops artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ops-artifacts
+          path: |
+            backend/ops/artifacts/*.log
+            backend/ops/artifacts/*.txt
+          if-no-files-found: warn
