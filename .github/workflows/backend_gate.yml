@@ -1,0 +1,112 @@
+name: backend-gate
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      # We keep backend-only gates light + reliable:
+      # - install deps (supports requirements.txt or pyproject.toml)
+      # - run alembic if present (SQLite DB for CI)
+      # - run pytest if present, else do a smoke import/compile pass
+      - name: Install backend deps
+        run: |
+          set -euo pipefail
+
+          # Try common backend roots in this repo
+          for d in backend fliptrybe-logistics app; do
+            if [ -d "$d" ]; then BACKEND_DIR="$d"; break; fi
+          done
+
+          if [ -z "${BACKEND_DIR:-}" ]; then
+            echo "No backend directory found (expected one of: backend, fliptrybe-logistics, app)"
+            ls -la
+            exit 1
+          fi
+
+          echo "Using backend dir: $BACKEND_DIR"
+          cd "$BACKEND_DIR"
+
+          python -m pip install --upgrade pip
+
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          elif [ -f "requirements-dev.txt" ]; then
+            pip install -r requirements-dev.txt
+          elif [ -f "pyproject.toml" ]; then
+            pip install -e .
+          else
+            echo "No requirements.txt / requirements-dev.txt / pyproject.toml found in $BACKEND_DIR"
+            ls -la
+            exit 1
+          fi
+
+      - name: Alembic upgrade (SQLite CI DB) if present
+        env:
+          # Generic env var many apps read; harmless if unused
+          DATABASE_URL: sqlite:///./ci_test.db
+          FLASK_ENV: development
+        run: |
+          set -euo pipefail
+
+          for d in backend fliptrybe-logistics app; do
+            if [ -d "$d" ]; then BACKEND_DIR="$d"; break; fi
+          done
+          cd "$BACKEND_DIR"
+
+          if [ -f "alembic.ini" ] || [ -d "migrations" ]; then
+            python -m pip install alembic >/dev/null 2>&1 || true
+
+            if python -m alembic --help >/dev/null 2>&1; then
+              # Prefer local alembic config if present
+              if [ -f "alembic.ini" ]; then
+                python -m alembic -c alembic.ini upgrade head
+                python -m alembic -c alembic.ini current || true
+              else
+                python -m alembic upgrade head
+                python -m alembic current || true
+              fi
+            else
+              echo "Alembic not available; skipping migrations step."
+            fi
+          else
+            echo "No alembic.ini or migrations/ found; skipping migrations step."
+          fi
+
+      - name: Backend tests (pytest if available, else smoke compile/import)
+        env:
+          DATABASE_URL: sqlite:///./ci_test.db
+          FLASK_ENV: development
+        run: |
+          set -euo pipefail
+
+          for d in backend fliptrybe-logistics app; do
+            if [ -d "$d" ]; then BACKEND_DIR="$d"; break; fi
+          done
+          cd "$BACKEND_DIR"
+
+          if ls -1 tests test 2>/dev/null | grep -q .; then
+            python -m pip install pytest >/dev/null 2>&1 || true
+            python -m pytest -q
+          else
+            echo "No tests/ directory found. Running compileall smoke pass."
+            python -m compileall -q .
+          fi
